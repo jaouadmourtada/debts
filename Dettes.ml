@@ -76,17 +76,17 @@ let rec deb_cred = function
 exception Invalid_debt_list ;;
   
 let algo debt =
-  let rec update tsf ld lc = match ld,lc with
+  let rec upd tsf ld lc = match ld,lc with
     |[],_-> tsf
     |_,[]-> tsf
     |(et,t)::q,(et',t')::q'-> let t'' = min (-t) t' in
-			      update (((et,et'),t'')::tsf)
+			      upd (((et,et'),t'')::tsf)
 				     (insert (et,t+t'') q)
 				     (insert (et',t'-t'') q')
   in
   if is_debt debt = false then raise Invalid_debt_list
   else let (ld,lc)= deb_cred debt in
-       List.rev (update [] ld lc) ;;
+       List.rev (upd [] ld lc) ;;
 
 
   (* VERSION AVEC FLOTTANTS *)
@@ -110,19 +110,34 @@ let rec deb_credf = function
 	       else (insertf (et,t) d,c) ;;
 
 let algof debt =
-  let rec update tsf ld lc = match ld,lc with
+  let rec upd tsf ld lc = match ld,lc with
     |[],_-> tsf
     |_,[]-> tsf
     |(et,t)::q,(et',t')::q'-> let t'' = min (-.t) t' in
-			      update (((et,et'),t'')::tsf)
+			      upd (((et,et'),t'')::tsf)
 				     (insertf (et,t+.t'') q)
 				     (insertf (et',t'-.t'') q')
   in
   if is_debtf debt = false then raise Invalid_debt_list
   else let (ld,lc)= deb_credf debt in
-       List.rev (update [] ld lc) ;;
+       List.rev (upd [] ld lc) ;;
 
   
   (* CRÉER LISTE DE DETTES À PARTIR D'AVANCES *)
+  
+let update debt cred debs t =
+  let n = float (List.length debs) in
+  let s = t/.n in
+  let rec foo a deb = function
+    |[]-> [(deb,a)]
+    |(deb',t')::q when deb'=deb -> if absf (t'+.a) < 0.01 then q
+				   else  (deb,t'+.a)::q
+    |(deb',t')::q -> (deb',t')::(foo a deb q)
+  in
+  foo t cred (iteract (foo (-.s)) debs debt) ;;
 
+(* Updates debts when creditor cred pays an amount of t for
+a good/service which benefits equally the debtors debs 
+(possibly including himself) *)
+  
   
